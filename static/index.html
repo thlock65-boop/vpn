@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Route VPN - Intelligent Per-Domain Routing</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Smart Route VPN</h1>
+          <p class="brand-subtitle">Measurement-driven routing & public Wi-Fi protection</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Live Saved Metric -->
+        <div class="metric-card" title="Average latency saved per request versus always going direct">
+          <span class="metric-label">Avg saved vs direct</span>
+          <div class="metric-value-wrap">
+            <span id="avgSavedMetric" class="metric-value">+0.0</span>
+            <span class="metric-unit">ms / req</span>
+          </div>
+        </div>
+
+        <!-- Network Toggle Pill -->
+        <div class="network-control-box">
+          <div class="network-indicator" id="networkIndicator">
+            <span class="dot"></span>
+            <span id="networkText">Trusted network</span>
+          </div>
+          <button id="toggleNetworkBtn" class="btn btn-secondary btn-sm" aria-label="Toggle network mode">
+            Switch to public Wi-Fi
+          </button>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button id="themeToggleBtn" class="btn btn-icon" title="Toggle light/dark theme" aria-label="Toggle light or dark theme">
+          <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Network Awareness Banner -->
+    <section id="networkBanner" class="network-banner trusted-banner">
+      <div class="banner-content">
+        <div class="banner-icon-box">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+            <line x1="12" y1="20" x2="12.01" y2="20"></line>
+          </svg>
+        </div>
+        <div class="banner-text">
+          <strong id="bannerTitle">Operating on trusted network (Speed-first policy)</strong>
+          <span id="bannerDescription">Sites route via VPN only when the VPN path is measured to be at least 10% faster. Banking and UPI sites route direct.</span>
+        </div>
+      </div>
+      <div class="banner-badge" id="wifiDetailsBadge">
+        <span id="wifiSsid">Wi-Fi: Secured</span>
+      </div>
+    </section>
+
+    <!-- Main Content Container -->
+    <main class="main-content">
+      <!-- Toolbar: Stats & Primary Actions -->
+      <div class="toolbar">
+        <div class="stats-pills">
+          <span class="stat-pill"><strong id="totalSitesCount">6</strong> sites tracked</span>
+          <span class="stat-pill stat-teal"><span class="badge-dot teal"></span> <strong id="vpnSitesCount">1</strong> on VPN</span>
+          <span class="stat-pill stat-amber"><span class="badge-dot amber"></span> <strong id="directSitesCount">5</strong> on Direct</span>
+          <span class="stat-pill stat-bank"><strong id="bankSitesCount">2</strong> banking-safe</span>
+        </div>
+
+        <div class="toolbar-actions">
+          <button id="addSiteBtn" class="btn btn-primary btn-sm">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add site
+          </button>
+          <button id="measureBtn" class="btn btn-secondary btn-sm" title="Re-measure HTTPS latencies for all sites">
+            <svg id="measureSpinner" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Measure latencies
+          </button>
+          <button id="viewConfigBtn" class="btn btn-secondary btn-sm" title="View & Copy sing-box JSON configuration">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Export sing-box config
+          </button>
+          <button id="judgeDemoBtn" class="btn btn-accent btn-sm" title="Interactive Judge Demo Walkthrough">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+            Judge demo mode
+          </button>
+        </div>
+      </div>
+
+      <!-- Sites Table Card -->
+      <div class="card table-card">
+        <div class="table-container">
+          <table class="sites-table" id="sitesTable">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 24%">Site & Category</th>
+                <th scope="col" style="width: 14%">Active route</th>
+                <th scope="col" style="width: 22%">Latency (Direct vs VPN)</th>
+                <th scope="col" style="width: 26%">Decision reason</th>
+                <th scope="col" style="width: 14%; text-align: right">Routing mode</th>
+              </tr>
+            </thead>
+            <tbody id="sitesTableBody">
+              <!-- Rendered via app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Side-by-Side Live Speed Comparison Panel (Section 11 requirement) -->
+      <section class="card speedtest-section" id="speedTestSection">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Speed verification test</h2>
+            <p class="section-desc">Run real round-trip timing bursts across both Direct and VPN paths to prove measurable millisecond savings.</p>
+          </div>
+          <div class="speedtest-controls">
+            <select id="speedtestDomainSelect" class="form-select" aria-label="Select domain for speed verification">
+              <option value="youtube.com">youtube.com (ISP-throttled example)</option>
+              <option value="github.com">github.com (Direct-optimal example)</option>
+              <option value="chat.openai.com">chat.openai.com (Close margin)</option>
+              <option value="instagram.com">instagram.com</option>
+            </select>
+            <button id="runSpeedTestBtn" class="btn btn-primary btn-sm">
+              Run test burst
+            </button>
+          </div>
+        </div>
+
+        <div id="speedTestResult" class="speedtest-result-box" style="display: none;">
+          <!-- Speed test results populated dynamically -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span>Smart Route VPN &bull; Hackathon Open Innovation Prototype</span>
+        <span class="mode-tag" id="simModeTag">Simulation active (reliable demo)</span>
+      </div>
+      <div class="footer-right">
+        <button id="toggleSimBtn" class="link-btn">Switch to real HTTP timing</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Add Site Modal -->
+  <div class="modal-backdrop" id="addSiteModal" role="dialog" aria-modal="true" aria-labelledby="addSiteTitle" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="addSiteTitle">Add new domain</h3>
+        <button class="modal-close" id="closeAddSiteModal" aria-label="Close modal">&times;</button>
+      </div>
+      <form id="addSiteForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="newSiteDomain">Domain name</label>
+            <input type="text" id="newSiteDomain" class="form-input" placeholder="e.g. netflix.com or icicibank.com" required>
+            <span class="input-hint">Protocols (https://) will be stripped automatically.</span>
+          </div>
+          <div class="form-group">
+            <label for="newSiteCategory">Category</label>
+            <select id="newSiteCategory" class="form-select">
+              <option value="general">General web service</option>
+              <option value="banking">Banking / UPI (Always routed direct)</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelAddSiteBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add site</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Export sing-box Config Modal -->
+  <div class="modal-backdrop" id="configModal" role="dialog" aria-modal="true" aria-labelledby="configModalTitle" style="display: none;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 id="configModalTitle">Generated sing-box configuration</h3>
+          <p class="modal-subtitle">Directly consumable by sing-box client with WireGuard, DoH DNS, and per-domain rules.</p>
+        </div>
+        <button class="modal-close" id="closeConfigModal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="code-box-header">
+          <span class="code-tag">sing-box v1.8+ format</span>
+          <button id="copyConfigBtn" class="btn btn-secondary btn-xs">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy JSON
+          </button>
+        </div>
+        <pre class="code-block"><code id="configJsonCode">// Loading sing-box JSON config...</code></pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="closeConfigModalBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Judge Walkthrough Modal (Section 11) -->
+  <div class="modal-backdrop" id="judgeModal" role="dialog" aria-modal="true" aria-labelledby="judgeModalTitle" style="display: none;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 id="judgeModalTitle">Hackathon Judge Demo Script</h3>
+          <p class="modal-subtitle">Interactive 4-step walk-through demonstrating every acceptance criterion.</p>
+        </div>
+        <button class="modal-close" id="closeJudgeModal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body judge-walkthrough-body">
+        <div class="step-card" id="judgeStep1">
+          <div class="step-num">Step 1</div>
+          <div class="step-info">
+            <h4>Start on trusted home network</h4>
+            <p>On home Wi-Fi, the app applies speed-first routing. Fast sites stay Direct. Only ISP-throttled sites (like <code>youtube.com</code>) route via WireGuard VPN because VPN is measured >10% faster.</p>
+            <button class="btn btn-secondary btn-sm mt-2" onclick="runJudgeStep(1)">Apply Step 1 (Home Network)</button>
+          </div>
+        </div>
+
+        <div class="step-card" id="judgeStep2">
+          <div class="step-num">Step 2</div>
+          <div class="step-info">
+            <h4>Simulate joining untrusted public Wi-Fi</h4>
+            <p>Press 'Join public Wi-Fi'. Notice how all normal web sites immediately flip to the teal VPN tunnel for protection. Crucially, <strong>banking sites (HDFC, SBI) stay safely on Direct</strong> with encrypted DNS, preventing banking fraud app blocks!</p>
+            <button class="btn btn-secondary btn-sm mt-2" onclick="runJudgeStep(2)">Apply Step 2 (Public Wi-Fi)</button>
+          </div>
+        </div>
+
+        <div class="step-card" id="judgeStep3">
+          <div class="step-num">Step 3</div>
+          <div class="step-info">
+            <h4>Run a before and after speed test</h4>
+            <p>Proves our claim with hard numbers: execute a real test burst to show round-trip milliseconds saved per request.</p>
+            <button class="btn btn-secondary btn-sm mt-2" onclick="runJudgeStep(3)">Apply Step 3 (Run Speed Test)</button>
+          </div>
+        </div>
+
+        <div class="step-card" id="judgeStep4">
+          <div class="step-num">Pitch</div>
+          <div class="step-info">
+            <h4>The core problem and pitch conclusion</h4>
+            <p><em>"People turn VPNs off in India because they slow everything down and break banking apps. Smart Route VPN solves this with measurement-driven per-domain routing, zero banking disruption, and proof in milliseconds."</em></p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="closeJudgeModalBtn">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
